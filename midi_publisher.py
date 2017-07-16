@@ -11,9 +11,9 @@ class MidiPublisher():
     self.midi_out.open_port(self.kMidiPortNumber)
   def run(self):
     while True:
-      msg = reader.read_message()
+      msg = self.reader.read_message()
       if msg:
-        midi_control_n = kFirstMidiControlIndex + msg.pin_index
+        midi_control_n = self.kFirstMidiControlIndex + msg.pin_index
         assert(msg.value >= 0 and msg.value < 128)
-        self.midi_out.send_message([kStatusByte, midi_control_n, msg.value)
+        self.midi_out.send_message([self.kStatusByte, midi_control_n, msg.value])
 
