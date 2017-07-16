@@ -1,11 +1,11 @@
-import fsr_reader
-import midi_publisher
+import runner
 
 def main():
-  reader = fsr_reader.FsrReader()
-  publisher = midi_publisher.MidiPublisher(reader)
-
-  publisher.run()
+  window_length = 10
+  min_diff = 0.001
+  tick_seconds = 0.1
+  r = runner.Runner()
+  r.run(window_length, min_diff, tick_seconds)
 
 if __name__ == "__main__":
   main()
