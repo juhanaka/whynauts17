@@ -1,6 +1,6 @@
 const int kBaudRate = 9600;
 const char kDelimiter = ',';
-const int kNumPins = 1;
+const int kNumPins = 4;
 const int kDelayMs = 5;
 
 void setup()
