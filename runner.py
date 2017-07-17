@@ -9,7 +9,7 @@ class Runner():
   kMeanIndex = 0
   kDotIndex = 1
   kDotDotIndex = 2
-  kGetStatsOnEvery = 20
+  kGetStatsOnEvery = 10
   kDotScale = 10
 
   def __init__(self):
