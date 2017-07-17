@@ -41,7 +41,7 @@ class Runner():
         s = collector.get_stats()
         if not self.should_publish(pin_index, s[self.kMeanIndex], s[self.kDotIndex], s[self.kDotDotIndex]):
           continue
-        if dot_value > 0.0:
+        if s[self.kDotIndex] > 0.0:
           dot_value = min(1.0, self.kDotScale * s[self.kDotIndex])
           self.publisher.publish_note_on(pin_index, dot_value)
         self.publisher.publish_control_change(pin_index, s[self.kMeanIndex])
