@@ -23,6 +23,9 @@ class CircularBuffer {
   /// @param[out] data pointer to which data will be popped
   /// @param[in] n number of data elements to be popped
   void Pop(T* data, size_t n);
+
+  // Returns the last element in the buffer without effecting the contents
+  T PeekLast();
   
   void PopPeek(T* data, size_t n);
 
@@ -122,6 +125,13 @@ void CircularBuffer<T>::Pop(T* data, size_t n) {
   memcpy(data, &data_[tail_], sizeof(T) * n);
   tail_ += n;
   count_ -= n;
+}
+
+template<typename T>
+T CircularBuffer<T>::PeekLast() {
+  T retVal;
+  memcpy(&retVal, &data_[tail_], sizeof(T));
+  return retVal;
 }
 
 template<typename T>
