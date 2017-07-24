@@ -4,19 +4,20 @@
 #include <pitchToNote.h>
 
 
+#define BASE_PIN                      0
 #define NUM_PINS                      4
 #define BUFFER_LENGTH                 20
-#define DEFAULT_PRESSURE_TRIGGER      40;
-#define DEFAULT_OFF_TRIGGER           30;
+#define DEFAULT_PRESSURE_TRIGGER      40
+#define DEFAULT_OFF_TRIGGER           30
+#define DEBUG                         0
 
 // MIDI Config
-#define CHANNEL         1
-#define CC_BASE         24
-#define PITCH_BASE      52
+#define CHANNEL         1   // Channel 2 in Mainstage
+#define CC_BASE         32
+#define PITCH_BASE      60
 
 
 const int kBaudRate = 115200;
-const int kStartPin = 8;
 const int kDelayMs = 10;
 const uint16_t kDiffThreshold = 10;
 const uint16_t kMaxDiff = 80;
@@ -119,13 +120,9 @@ void setup()
 
 
   float weight_sum = (float)factorial_sum(BUFFER_LENGTH);
-  float sum = 0;
   for (int i = 0; i < BUFFER_LENGTH; ++i) {
     m_weights[i] = float(i + 1) / weight_sum;
-    sum += m_weights[i];
-    Serial.println(m_weights[i]);
   }
-  Serial.println(sum);
   
   
 }
@@ -137,7 +134,7 @@ void loop() {
   
   for (int i = 0; i < NUM_PINS; ++i) {
     
-    uint16_t fsr_reading = analogRead(kStartPin + i);
+    uint16_t fsr_reading = analogRead(BASE_PIN + i);
     uint16_t oldValue = m_values[i];
 
     // Filter out crazy big jumps
@@ -154,35 +151,38 @@ void loop() {
 //    int newValue = movingAverage(fsr_reading, i);
 //    int newValue = fsr_reading;
     
-
-//  Serial.println(String(kStartPin + i) + String(kDelimiter) + String(newValue));  
     
     if (oldValue != newValue && abs(diff) >= kDiffThreshold) {
-      
-//      Serial.println(String(kStartPin + i) + String(kDelimiter) + String(newValue));
       
       int controlValue = map(newValue, 0, 1023, 0, 128);
 
       if (m_notes_on[i] && controlValue <= m_off_pressure_triggers[i]) {
         m_notes_on[i] = false;
-        noteOff(CHANNEL, PITCH_BASE + i, 64);
-//        Serial.print("Note Off: ");
-//        Serial.println(i + PITCH_BASE);
-        
+        if (DEBUG) {
+          Serial.print("Note Off: ");
+          Serial.println(i + PITCH_BASE);
+        } else {
+          noteOff(CHANNEL, PITCH_BASE + i, controlValue);
+        }
       } else if (!m_notes_on[i] && controlValue >= m_on_pressure_triggers[i]) {
         m_notes_on[i] = true;
-        noteOn(CHANNEL, PITCH_BASE + i, 64);
-//        Serial.print("Note On:  ");
-//        Serial.println(i + PITCH_BASE);
+        if (DEBUG) {
+          Serial.print("Note On:  ");
+          Serial.println(i + PITCH_BASE);
+        } else {
+          noteOn(CHANNEL, PITCH_BASE + i, controlValue);
+        }
       }
 
-      controlChange(CHANNEL, CC_BASE + i, controlValue);
-      MidiUSB.flush();
+      if (DEBUG) {
+        Serial.println(String(BASE_PIN + i) + String(kDelimiter) + String(controlValue));
+      } else {
+        controlChange(CHANNEL, CC_BASE + i, controlValue);
+        MidiUSB.flush();
+      }
 
-//      Serial.println(String(kStartPin + i) + String(kDelimiter) + String(controlValue));
-      
       m_values[i] = newValue;
-      
+   
     }
   }
 

@@ -5,8 +5,8 @@ import collections
 ReaderOutput = collections.namedtuple('ReaderOutput', ['pin_index', 'value'])
 
 class FsrReader():
-  kPortName = '/dev/cu.usbmodem1421'
-  kBaudRate = 9600
+  kPortName = '/dev/tty.usbmodem1411'
+  kBaudRate = 115200
   kTimeoutSeconds = 1e-1
 
   # The FSR value will be clamped between kMinReading and kMaxReading and normalized to be within

@@ -1,7 +1,7 @@
 import collections
 import numpy as np
-import threading
-import copy
+# import threading
+# import copy
 
 class RunningStatsCollector():
   def __init__(self, window_length):
