@@ -95,11 +95,11 @@ class Runner():
       return True
     return False
 
-  def check_for_velocity_note_on(self, pin_index, mean, dot, ch):
+  def check_for_velocity_note_on(self, pin_index, mean, dot, ch, sensitivity = 0.2):
     if self.notes_on[ch-1][pin_index]:
       return False
 
-    if mean >= 0.15 and dot >= 0.2:
+    if mean >= 0.15 and dot >= sensitivity:
       self.notes_on[ch-1][pin_index] = True
       self.note_times[ch-1][pin_index] = time()
       self.publisher.publish_note_on(pin_index, dot, ch)
@@ -152,7 +152,7 @@ class Runner():
         #if not self.check_for_pressure_note_on(pin_index, s.mean, s.mean_dot, ch = 1):
           #self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 1)
 
-        if not self.check_for_velocity_note_on(pin_index, s.mean, s.mean_dot, ch = channel):
+        if not self.check_for_velocity_note_on(pin_index, s.mean, s.mean_dot, ch = channel, sensitivity = 0.15):
           # self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 2)
           self.check_for_time_based_note_off(pin_index, delay = 1, ch = channel)
 
