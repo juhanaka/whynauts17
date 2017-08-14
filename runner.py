@@ -13,7 +13,7 @@ class Runner():
   kChangeDecayIndex = 3
   kGetStatsOnEvery = 10
   kDotScale = 10
-  kChangeDecayScale = 8
+  kChangeDecayScale = 10
   kNumNotes = 16
   kNumChannels = 3
   kNoteOnThreshold = 0.3

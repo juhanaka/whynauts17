@@ -12,6 +12,9 @@ class RunningStatsCollector():
       0.001, 0.002, 0.004, 0.008, 0.016,  # 0.1, 0.2, 0.3, 0.4, 0.5,
       0.032, 0.064, 0.128, 0.256   # 0.6, 0.7, 0.8, 0.9, 1
     ]
+    self.prev_dot_exponential_moving_average = 0.0
+    self.kAlpha = 0.005
+    self.kBeta = 2.0
 
   def add(self, value):
     self.values.append(value)
@@ -23,14 +26,8 @@ class RunningStatsCollector():
     dot_dot = np.gradient(dot) if len(dot) > 1 else [0]
     mean_dot_dot = float(sum(dot_dot)) / len(dot_dot)
 
-    self.change_decay_values.append(abs(mean_dot))
-    change_avg = sum(self.change_decay_values) / float(len(self.change_decay_values))
-
-    change_decay = change_avg
-    for i in range(0, len(self.change_decay_history)):
-      change_decay += self.weights[i] * self.change_decay_history[i]
-    self.change_decay_history.append(change_decay)
-
+    self.prev_dot_exponential_moving_average = self.kAlpha * self.kBeta * abs(mean_dot) + (1 - self.kAlpha) * self.prev_dot_exponential_moving_average
+    change_decay = self.prev_dot_exponential_moving_average
 
     return (mean, mean_dot, mean_dot_dot, change_decay)
 

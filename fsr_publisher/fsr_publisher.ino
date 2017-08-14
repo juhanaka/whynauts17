@@ -18,11 +18,7 @@ void setup()
 void loop() {
   for (int i = 0; i < kNumPins; ++i) {
     int fsr_reading = analogRead(kStartPin + i);
-    int oldValue = values[i];
-    if (oldValue != fsr_reading) {
-      Serial.println(String(kStartPin + i) + String(kDelimiter) + String(fsr_reading));
-      values[i] = fsr_reading;
-    }
+    Serial.println(String(kStartPin + i) + String(kDelimiter) + String(fsr_reading));
   }
   delay(kDelayMs);
 }
