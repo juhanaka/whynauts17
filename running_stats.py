@@ -1,18 +1,10 @@
 import collections
 import numpy as np
-# import threading
-# import copy
 
 class RunningStatsCollector():
   def __init__(self, window_length):
     self.values = collections.deque([], window_length)
-    self.change_decay_values = collections.deque([], 50)
-    self.change_decay_history = collections.deque([], 9)
-    self.weights = [
-      0.001, 0.002, 0.004, 0.008, 0.016,  # 0.1, 0.2, 0.3, 0.4, 0.5,
-      0.032, 0.064, 0.128, 0.256   # 0.6, 0.7, 0.8, 0.9, 1
-    ]
-    self.prev_dot_exponential_moving_average = 0.0
+    self.prev_exp_moving_avg = 0.0
     self.kAlpha = 0.005
     self.kBeta = 2.0
 
@@ -26,8 +18,8 @@ class RunningStatsCollector():
     dot_dot = np.gradient(dot) if len(dot) > 1 else [0]
     mean_dot_dot = float(sum(dot_dot)) / len(dot_dot)
 
-    self.prev_dot_exponential_moving_average = self.kAlpha * self.kBeta * abs(mean_dot) + (1 - self.kAlpha) * self.prev_dot_exponential_moving_average
-    change_decay = self.prev_dot_exponential_moving_average
+    self.prev_exp_moving_avg = (self.kAlpha * self.kBeta * abs(mean_dot) +
+      (1 - self.kAlpha) * self.prev_exp_moving_avg)
 
-    return (mean, mean_dot, mean_dot_dot, change_decay)
+    return (mean, mean_dot, mean_dot_dot, self.prev_exp_moving_avg)
 
