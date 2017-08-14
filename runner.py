@@ -23,11 +23,11 @@ class Runner():
     self.note_times = [[time()-60] * self.kNumNotes for _ in range(self.kNumChannels)]
     self.last_decay = [0] * self.kNumNotes
 
-  def _clip_and_scale_stats(stats):
+  def _clip_and_scale_stats(self, stats):
     mean = max(min(1.0, stats.mean), 0.0)
-    mean_dot = max(min(1.0, stats.mean_dot * kDotScale), 0.0)
-    mean_dot_dot = max(min(1.0, stats.mean_dot_dot * kDotDotScale), 0.0)
-    dot_moving_avg = max(min(1.0, stats.dot_moving_avg * kDotMovingAvgScale), 0.0)
+    mean_dot = max(min(1.0, stats.mean_dot * self.kDotScale), 0.0)
+    mean_dot_dot = max(min(1.0, stats.mean_dot_dot * self.kDotDotScale), 0.0)
+    dot_moving_avg = max(min(1.0, stats.dot_moving_avg * self.kDotMovingAvgScale), 0.0)
     return running_stats.RunningStats(
         mean=mean, mean_dot=mean_dot, mean_dot_dot=mean_dot_dot,
         dot_moving_avg=dot_moving_avg)

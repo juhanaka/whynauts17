@@ -8,7 +8,7 @@ class RunningStatsCollector():
   kBeta = 2.0
   kWindowLength = 10
 
-  def __init__(self, window_length):
+  def __init__(self):
     self.values = collections.deque([], self.kWindowLength)
     self.prev_dot_moving_avg = 0.0
 
