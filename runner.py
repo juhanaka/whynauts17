@@ -21,7 +21,7 @@ class Runner():
     self.publisher = midi_publisher.MidiPublisher()
     self.notes_on = [[False] * self.kNumNotes for _ in range(self.kNumChannels)]
     self.note_times = [[time()-60] * self.kNumNotes for _ in range(self.kNumChannels)]
-    self.last_decay = [0] * self.kNumNotes
+    self.last_dot_moving_avg = [0] * self.kNumNotes
 
   def _clip_and_scale_stats(self, stats):
     mean = max(min(1.0, stats.mean), 0.0)
@@ -37,12 +37,12 @@ class Runner():
       return True
     return False
 
-  def should_publish_change_decay(self, pin_index, value):
-    old_value = self.last_decay[pin_index]
+  def should_publish_dot_moving_avg(self, pin_index, value):
+    old_value = self.last_dot_moving_avg[pin_index]
     if old_value == value:
       return False
     if abs(value - old_value) > self.kDotMovingAvgThreshold:
-      self.last_decay[pin_index] = value
+      self.last_dot_moving_avg[pin_index] = value
       return True
     return False
 
@@ -62,7 +62,7 @@ class Runner():
     if not self.notes_on[ch-1][pin_index]:
       return False
 
-    if mean <= 0.3 or self.last_decay[pin_index] < 0.05:
+    if mean <= 0.3 or self.last_dot_moving_avg[pin_index] < 0.05:
       self.notes_on[ch-1][pin_index] = False
       self.publisher.publish_note_off(pin_index, 0.5, ch)
       print 'Activity Note Off: ', pin_index, ' Channel: ', ch
@@ -106,12 +106,12 @@ class Runner():
       return True
     return False
 
-  def check_for_activity_based_note_on(self, pin_index, change_decay, ch):
+  def check_for_activity_based_note_on(self, pin_index, dot_moving_avg, ch):
     if self.notes_on[ch-1][pin_index]:
       return False
 
     time_since = time()-self.note_times[ch-1][pin_index]
-    if change_decay > 0.45 and time_since > 6:
+    if dot_moving_avg > 0.45 and time_since > 6:
       self.notes_on[ch-1][pin_index] = True
       self.note_times[ch-1][pin_index] = time()
       self.publisher.publish_note_on(pin_index, 0.7, ch)
@@ -140,7 +140,7 @@ class Runner():
         s = self._clip_and_scale_stats(collector.get_stats())
 
         if not self.check_for_pressure_note_on(pin_index, s.mean, s.mean_dot, ch = 1):
-          self.check_for_basic_note_off(pin_index, s.mean, s.mean_dot, ch = 1)
+          self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 1)
 
         if not self.check_for_velocity_note_on(pin_index, s.mean, s.mean_dot, ch = 2):
           self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 2)
@@ -156,7 +156,7 @@ class Runner():
             self.publisher.publish_note_off(pin_index, 0.8, 2)
 
 
-        if self.should_publish_change_decay(pin_index, s.dot_moving_avg):
+        if self.should_publish_dot_moving_avg(pin_index, s.dot_moving_avg):
           self.publisher.publish_control_change(self.kNumNotes + pin_index, s.dot_moving_avg)
 
         if not self.should_publish_control(pin_index, s.mean, s.mean_dot, s.mean_dot_dot):
