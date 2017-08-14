@@ -5,7 +5,7 @@ import threading
 from time import time
 
 class Runner():
-  kDotThreshold = 0.01
+  kDotThreshold = 0.1
   kDotMovingAvgThreshold = 0.002
   kGetStatsOnEvery = 10
   kDotScale = 10
@@ -13,7 +13,8 @@ class Runner():
   kDotMovingAvgScale = 10
   kNumNotes = 16
   kNumChannels = 3
-  kNoteOnThreshold = 0.3
+  kNoteOnThreshold = 0.2
+  kControlPinIndex = 7
 
   def __init__(self):
     self.reader = fsr_reader.FsrReader()
@@ -25,8 +26,8 @@ class Runner():
 
   def _clip_and_scale_stats(self, stats):
     mean = max(min(1.0, stats.mean), 0.0)
-    mean_dot = max(min(1.0, stats.mean_dot * self.kDotScale), 0.0)
-    mean_dot_dot = max(min(1.0, stats.mean_dot_dot * self.kDotDotScale), 0.0)
+    mean_dot = max(min(1.0, stats.mean_dot * self.kDotScale), -1.0)
+    mean_dot_dot = max(min(1.0, stats.mean_dot_dot * self.kDotDotScale), -1.0)
     dot_moving_avg = max(min(1.0, stats.dot_moving_avg * self.kDotMovingAvgScale), 0.0)
     return running_stats.RunningStats(
         mean=mean, mean_dot=mean_dot, mean_dot_dot=mean_dot_dot,
@@ -98,7 +99,7 @@ class Runner():
     if self.notes_on[ch-1][pin_index]:
       return False
 
-    if mean >= 0.15 and dot >= 0.6:
+    if mean >= 0.15 and dot >= 0.2:
       self.notes_on[ch-1][pin_index] = True
       self.note_times[ch-1][pin_index] = time()
       self.publisher.publish_note_on(pin_index, dot, ch)
@@ -136,14 +137,24 @@ class Runner():
         continue
       i = 0
 
+      control_pin_on = False
+      for pin_index, collector in self.collectors.iteritems():
+        if pin_index == self.kControlPinIndex:
+          s = self._clip_and_scale_stats(collector.get_stats())
+          if s.mean > 0.4:
+            control_pin_on = True
+
+      channel = 1 if control_pin_on else 2
+
       for pin_index, collector in self.collectors.iteritems():
         s = self._clip_and_scale_stats(collector.get_stats())
 
-        if not self.check_for_pressure_note_on(pin_index, s.mean, s.mean_dot, ch = 1):
-          self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 1)
+        #if not self.check_for_pressure_note_on(pin_index, s.mean, s.mean_dot, ch = 1):
+          #self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 1)
 
-        if not self.check_for_velocity_note_on(pin_index, s.mean, s.mean_dot, ch = 2):
-          self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 2)
+        if not self.check_for_velocity_note_on(pin_index, s.mean, s.mean_dot, ch = channel):
+          # self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 2)
+          self.check_for_time_based_note_off(pin_index, delay = 1, ch = channel)
 
         if not self.check_for_activity_based_note_on(pin_index, s.dot_moving_avg, ch = 3):
           self.check_for_time_based_note_off(pin_index, delay = 4, ch = 3)
