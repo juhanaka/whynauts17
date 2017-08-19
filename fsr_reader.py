@@ -5,7 +5,6 @@ import collections
 ReaderOutput = collections.namedtuple('ReaderOutput', ['pin_index', 'value'])
 
 class FsrReader():
-  kPortName = '/dev/tty.usbmodem1411'
   kBaudRate = 115200
   kTimeoutSeconds = 1e-1
 
@@ -15,7 +14,13 @@ class FsrReader():
   kMaxReading = 1023
 
   def __init__(self):
-    self.reader = serial.Serial(self.kPortName, self.kBaudRate, timeout=self.kTimeoutSeconds)
+    try:
+      self.reader = serial.Serial('/dev/tty.usbmodem1421', self.kBaudRate, timeout=self.kTimeoutSeconds)
+    except:
+      try:
+        self.reader = serial.Serial('/dev/tty.usbmodem1411', self.kBaudRate, timeout=self.kTimeoutSeconds)
+      except:
+        raise
 
   # Reads a single message from serial and returns it.
   def read_message(self):
