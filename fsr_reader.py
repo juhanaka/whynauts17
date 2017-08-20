@@ -15,7 +15,7 @@ class FsrReader():
 
   def __init__(self):
     try:
-      self.reader = serial.Serial('/dev/tty.usbmodem1421', self.kBaudRate, timeout=self.kTimeoutSeconds)
+      self.reader = serial.Serial('/dev/tty.usbmodem61', self.kBaudRate, timeout=self.kTimeoutSeconds)
     except:
       try:
         self.reader = serial.Serial('/dev/tty.usbmodem1411', self.kBaudRate, timeout=self.kTimeoutSeconds)

@@ -149,10 +149,10 @@ class Runner():
       for pin_index, collector in self.collectors.iteritems():
         s = self._clip_and_scale_stats(collector.get_stats())
 
-        #if not self.check_for_pressure_note_on(pin_index, s.mean, s.mean_dot, ch = 1):
-          #self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 1)
+        if not self.check_for_pressure_note_on(pin_index, s.mean, s.mean_dot, ch = 1):
+          self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 1)
 
-        if not self.check_for_velocity_note_on(pin_index, s.mean, s.mean_dot, ch = channel, sensitivity = 0.15):
+        if not self.check_for_velocity_note_on(pin_index, s.mean, s.mean_dot, ch = channel, sensitivity = 0.1):
           # self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 2)
           self.check_for_time_based_note_off(pin_index, delay = 1, ch = channel)
 
