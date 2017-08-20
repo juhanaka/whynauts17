@@ -41,4 +41,5 @@ class MidiPublisher():
     self.midi_out.send_message([cmd, midi_control_n, midi_value])
     # print 'Control number: ', midi_control_n, ', Value: ', midi_value
 
-
+  def publish_master_control_change(self, index, value, ch=4):
+    self.publish_control_change(index, value, ch=ch)

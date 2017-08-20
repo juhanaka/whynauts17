@@ -23,6 +23,8 @@ class Runner():
     self.notes_on = [[False] * self.kNumNotes for _ in range(self.kNumChannels)]
     self.note_times = [[time()-60] * self.kNumNotes for _ in range(self.kNumChannels)]
     self.last_dot_moving_avg = [0] * self.kNumNotes
+    self.last_total_avg = 0
+    self.last_total_activity = 0
 
   def _clip_and_scale_stats(self, stats):
     mean = max(min(1.0, stats.mean), 0.0)
@@ -55,7 +57,7 @@ class Runner():
     if mean <= 0.3 or time_since > 6:
       self.notes_on[ch-1][pin_index] = False
       self.publisher.publish_note_off(pin_index, 0.5, ch)
-      print 'Basic Note Off: ', pin_index, ' Channel: ', ch
+      # print 'Basic Note Off: ', pin_index, ' Channel: ', ch
       return True
     return False
 
@@ -66,7 +68,7 @@ class Runner():
     if mean <= 0.3 or self.last_dot_moving_avg[pin_index] < 0.05:
       self.notes_on[ch-1][pin_index] = False
       self.publisher.publish_note_off(pin_index, 0.5, ch)
-      print 'Activity Note Off: ', pin_index, ' Channel: ', ch
+      # print 'Activity Note Off: ', pin_index, ' Channel: ', ch
       return True
     return False
 
@@ -78,7 +80,7 @@ class Runner():
     if time_since > delay:
       self.notes_on[ch-1][pin_index] = False
       self.publisher.publish_note_off(pin_index, 0.5, ch)
-      print 'Time Based Note Off: ', pin_index, ' Channel: ', ch
+      # print 'Time Based Note Off: ', pin_index, ' Channel: ', ch
       return True
     return False
 
@@ -91,7 +93,7 @@ class Runner():
       self.notes_on[ch-1][pin_index] = True
       self.note_times[ch-1][pin_index] = time()
       self.publisher.publish_note_on(pin_index, dot, ch)
-      print 'Pressure Note On: ', pin_index, ' Channel: ', ch
+      # print 'Pressure Note On: ', pin_index, ' Channel: ', ch
       return True
     return False
 
@@ -103,7 +105,7 @@ class Runner():
       self.notes_on[ch-1][pin_index] = True
       self.note_times[ch-1][pin_index] = time()
       self.publisher.publish_note_on(pin_index, dot, ch)
-      print 'Velocity Note On: ', pin_index, ' Channel: ', ch
+      # print 'Velocity Note On: ', pin_index, ' Channel: ', ch
       return True
     return False
 
@@ -116,7 +118,7 @@ class Runner():
       self.notes_on[ch-1][pin_index] = True
       self.note_times[ch-1][pin_index] = time()
       self.publisher.publish_note_on(pin_index, 0.7, ch)
-      print 'Activity Note On: ', pin_index, ' Channel: ', ch
+      # print 'Activity Note On: ', pin_index, ' Channel: ', ch
       return True
     return False
 
@@ -146,11 +148,13 @@ class Runner():
 
       channel = 1 if control_pin_on else 2
 
+      totals = []
       for pin_index, collector in self.collectors.iteritems():
         s = self._clip_and_scale_stats(collector.get_stats())
+        totals.append(s)
 
-        if not self.check_for_pressure_note_on(pin_index, s.mean, s.mean_dot, ch = 1):
-          self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 1)
+        # if not self.check_for_pressure_note_on(pin_index, s.mean, s.mean_dot, ch = 1):
+        #   self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 1)
 
         if not self.check_for_velocity_note_on(pin_index, s.mean, s.mean_dot, ch = channel, sensitivity = 0.1):
           # self.check_for_activity_based_note_off(pin_index, s.mean, s.mean_dot, ch = 2)
@@ -170,6 +174,24 @@ class Runner():
         if self.should_publish_dot_moving_avg(pin_index, s.dot_moving_avg):
           self.publisher.publish_control_change(self.kNumNotes + pin_index, s.dot_moving_avg)
 
-        if not self.should_publish_control(pin_index, s.mean, s.mean_dot, s.mean_dot_dot):
-          continue
-        self.publisher.publish_control_change(pin_index, s.mean)
+        if self.should_publish_control(pin_index, s.mean, s.mean_dot, s.mean_dot_dot):
+          self.publisher.publish_control_change(pin_index, s.mean)
+        
+      # Totals
+      means = map(lambda x: x.mean, totals)
+      dots = map(lambda x: x.mean_dot, totals)
+      activities = map(lambda x: x.dot_moving_avg, totals)
+      total_mean = 2*sum(means) / float(len(means))
+      total_dot = 2*sum(dots) / float(len(means))
+      total_activity = sum(activities) / float(len(activities))
+      total_stats = running_stats.RunningStats(mean=total_mean, mean_dot=total_dot, mean_dot_dot=0, dot_moving_avg=total_activity)
+      stats = self._clip_and_scale_stats(total_stats)
+
+      if abs(stats.mean - self.last_total_avg) > 0.01:
+        self.last_total_avg = stats.mean
+        self.publisher.publish_master_control_change(0, stats.mean)
+
+      if abs(stats.dot_moving_avg - self.last_total_activity) > 0.01:
+        self.last_total_activity = stats.dot_moving_avg
+        self.publisher.publish_master_control_change(1, stats.dot_moving_avg)
+
