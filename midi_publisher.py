@@ -1,9 +1,10 @@
 import rtmidi_python as rtmidi
 
+kNoteMap = {2: 48, 3: 50, 14: 52, 15: 53, 12: 55, 13: 57, 1: 59, 0: 60, 11: 62, 8: 64, 5: 65, 4: 67, 7: 69, 6: 71, 9: 72, 10: 74}
+ 
 class MidiPublisher():
   kMidiPortNumber = 0
   kFirstMidiControlIndex = 20
-  kFirstMidiNoteIndex = 48
   kMaxValue = 127
   kStatusByteControl = 0xb0
   kStatusByteNoteOn = 0x90
@@ -20,14 +21,14 @@ class MidiPublisher():
     return int(value * self.kMaxValue)
 
   def publish_note_on(self, fsr_index, note_velocity, ch=None):
-    note_number = self.kFirstMidiNoteIndex + fsr_index
+    note_number = kNoteMap[fsr_index]
     midi_value = self._to_midi_value(note_velocity)
     cmd = (self.kStatusByteNoteOn & 0xf0) | ((ch if ch else self.channel) - 1 & 0xf)
     self.midi_out.send_message([cmd, note_number, midi_value])
     # print 'Note On: ', note_number, ', Velocity: ', midi_value
 
   def publish_note_off(self, fsr_index, note_velocity, ch=None):
-    note_number = self.kFirstMidiNoteIndex + fsr_index
+    note_number = kNoteMap[fsr_index]
     midi_value = self._to_midi_value(note_velocity)
     cmd = (self.kStatusByteNoteOff & 0xf0) | ((ch if ch else self.channel) - 1 & 0xf)
     self.midi_out.send_message([cmd, note_number, midi_value])
