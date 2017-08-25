@@ -88,15 +88,20 @@ uint8_t r1,g1,b1,r2,g2,b2,r,g,b;
 float interpPctGradient;
 float brightness;
 float explosion = -1.0;
+float implosion = -1.0;
 float explosionOverlay;
+float implosionOverlay;
+float explosionRate = 0.15;
+float implosionRate = 0.15;
+float explosionImplosionPeak = 0.29;
 int idxColor;
 int idxSegment;
 
 // fsr vars
 const float maxFsrPercDelta = 0.1;
 int newValueSmoothed;
-const int tileOnThreshold = 500;
-const int tileOffThreshold = 300;
+const int tileOnThreshold = 300;
+const int tileOffThreshold = 250;
 
 // fsr vars (for debugging)
 const int fsrPin = 3;
@@ -179,7 +184,9 @@ void removeTileColor(int tile) {
   }
   // decrease total color count as we've just removed one
   targetColorCount -= 1;
-  colorCount = targetColorCount;
+//  colorCount = targetColorCount;
+  implosion = 0.0;  
+
 }
 
 // return a smoothed FSR value.
@@ -257,7 +264,8 @@ void drawPalettes() {
 
   // if we're transitioning, progress the "explosion" (i.e. a fade to white before settling into the new state)
   if( explosion >= 0.0 && explosion < 1.0 ) {
-    explosionOverlay = -0.5 * cos(2 * PI * (1-explosion)*(1-explosion)) + 0.5; // use a skewed cosine for the shape of the transition
+//    explosionOverlay = -0.5 * cos(2 * PI * (1-explosion)*(1-explosion)) + 0.5; // use a skewed cosine for the shape of the transition
+    explosionOverlay = std::min(explosion,explosionImplosionPeak) / explosionImplosionPeak - std::max(explosion - explosionImplosionPeak,float(0.0)) / ( 1 - explosionImplosionPeak );
 
     // when the explosion is at its peak, add the new color
     if( explosion > 0.29 && targetColorCount > colorCount ){
@@ -265,10 +273,24 @@ void drawPalettes() {
       colorDistance = segmentSize / float(colorCount);
     }
     
-    explosion += 0.07; // progress the explosion
+    explosion += explosionRate; // progress the explosion
+    implosionOverlay = 0.0;
+  }
+  else if( implosion >= 0.0 && implosion < 1.0 ) {
+//    implosionOverlay = -0.5 * cos(2 * PI * (1-implosion)*(1-implosion)) + 0.5; // use a skewed cosine for the shape of the transition
+    implosionOverlay = std::min(implosion,explosionImplosionPeak) / explosionImplosionPeak - std::max(implosion - explosionImplosionPeak,float(0.0)) / ( 1 - explosionImplosionPeak );
+
+    if( implosion > 0.29 && targetColorCount < colorCount ) {
+      colorCount = targetColorCount;
+      colorDistance = segmentSize / float(colorCount);
+    }
+
+    implosion += implosionRate;
+    explosionOverlay = 0.0;
   }
   else {
     explosionOverlay = 0.0;
+    implosionOverlay = 0.0;
   }
 
   // set each row
@@ -299,6 +321,11 @@ void drawPalettes() {
     r = ( 255.0 - r )*explosionOverlay + r;
     g = ( 255.0 - g )*explosionOverlay + g;
     b = ( 255.0 - b )*explosionOverlay + b;
+
+    // add the implosion (i.e. interpolate with black)
+    r = ( 0.0 - r )*implosionOverlay + r;
+    g = ( 0.0 - g )*implosionOverlay + g;
+    b = ( 0.0 - b )*implosionOverlay + b;
 
     // set the color
     setRowColor(idxSegment,strip.Color(r,g,b));
