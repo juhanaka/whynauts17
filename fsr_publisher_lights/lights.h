@@ -69,11 +69,11 @@ const uint8_t palettes[numPalettes][paletteSize][3] = {
 
 // palette painting vars
 int paletteIdx = 2;
-int colorCount = 1;
+int colorCount = 0;
 int targetColorCount = colorCount;
 float colorDistance;
 int assignedColors[16][2] = {
-  {999,0},
+//  {999,0},
 //  {999,1},
 //  {999,2},
 //  {999,3}
@@ -154,7 +154,7 @@ void addTileColor(int tile) {
   assignedColors[targetColorCount][0] = tile;
   assignedColors[targetColorCount][1] = maxColor + 1;
   targetColorCount += 1;
-  explosion = 0.0;  
+  explosion = 0.0;
 }
 
 // remove a color that has been added to the palette
@@ -329,6 +329,7 @@ void drawPalettes() {
 
     // set the color
     setRowColor(idxSegment,strip.Color(r,g,b));
+//    setRowColor(idxSegment,strip.Color(255,255,255));
   }
   
   strip.show();
